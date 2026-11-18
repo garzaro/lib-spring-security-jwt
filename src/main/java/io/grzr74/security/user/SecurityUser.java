@@ -19,6 +19,7 @@ import java.util.List;
  * access token, pelo filtro JWT como o principal da {@code Authentication} armazenada
  * no contexto de segurança. Assim, regras de autorização acessam a identidade e as
  * permissões da requisição sem consultar o serviço de usuários ou o Redis.</p>
+ *
  */
 public class SecurityUser implements UserDetails {
 
