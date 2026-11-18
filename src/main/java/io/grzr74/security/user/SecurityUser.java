@@ -11,6 +11,15 @@ import java.util.List;
 
 @Getter
 @Builder
+/**
+ * Representa o usuário da aplicação para o Spring Security, adaptando sua identidade,
+ * credencial e permissões ao contrato {@link UserDetails}.
+ *
+ * <p>É usado nos fluxos de autenticação para emitir tokens e, após a validação de um
+ * access token, pelo filtro JWT como o principal da {@code Authentication} armazenada
+ * no contexto de segurança. Assim, regras de autorização acessam a identidade e as
+ * permissões da requisição sem consultar o serviço de usuários ou o Redis.</p>
+ */
 public class SecurityUser implements UserDetails {
 
 
