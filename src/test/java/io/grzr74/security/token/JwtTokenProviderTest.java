@@ -33,17 +33,17 @@ class JwtTokenProviderTest {
 
     @Test
     void should_generate_valid_access_token() {
-        String token = tokenProvider.generateAccessToken("user1", "user@test.com", List.of("USER_READ"));
+        String token = tokenProvider.gerarAccessToken("user1", "user@test.com", List.of("USER_READ"));
 
         assertThat(token).isNotBlank();
-        assertThat(tokenProvider.parseAccessToken(token)).isPresent();
+        assertThat(tokenProvider.obterClaimsAccessToken(token)).isPresent();
     }
 
     @Test
     void should_extract_claims_from_access_token() {
-        String token = tokenProvider.generateAccessToken("user1", "user@test.com", List.of("USER_READ", "ORDER_WRITE"));
+        String token = tokenProvider.gerarAccessToken("user1", "user@test.com", List.of("USER_READ", "ORDER_WRITE"));
 
-        Optional<AccessTokenClaims> claims = tokenProvider.parseAccessToken(token);
+        Optional<AccessTokenClaims> claims = tokenProvider.obterClaimsAccessToken(token);
 
         assertThat(claims).isPresent();
         assertThat(claims.get().getUserId()).isEqualTo("user1");
@@ -57,9 +57,9 @@ class JwtTokenProviderTest {
         otherProperties.setSecret("another-secret-key-must-be-at-least-32-chars!");
         otherProperties.setIssuer("grzr74-test");
         String token = new JwtTokenProvider(otherProperties)
-                .generateAccessToken("user1", "user@test.com", List.of());
+                .gerarAccessToken("user1", "user@test.com", List.of());
 
-        assertThat(tokenProvider.parseAccessToken(token)).isEmpty();
+        assertThat(tokenProvider.obterClaimsAccessToken(token)).isEmpty();
     }
 
     @Test
@@ -68,9 +68,9 @@ class JwtTokenProviderTest {
         otherProperties.setSecret(SECRET);
         otherProperties.setIssuer("other-issuer");
         String token = new JwtTokenProvider(otherProperties)
-                .generateAccessToken("user1", "user@test.com", List.of());
+                .gerarAccessToken("user1", "user@test.com", List.of());
 
-        assertThat(tokenProvider.parseAccessToken(token)).isEmpty();
+        assertThat(tokenProvider.obterClaimsAccessToken(token)).isEmpty();
     }
 
     @Test
@@ -80,33 +80,33 @@ class JwtTokenProviderTest {
         expiredProperties.setIssuer("grzr74-test");
         expiredProperties.setAccessTokenTtl(Duration.ofSeconds(-1));
         JwtTokenProvider expiredProvider = new JwtTokenProvider(expiredProperties);
-        String token = expiredProvider.generateAccessToken("user1", "user@test.com", List.of());
+        String token = expiredProvider.gerarAccessToken("user1", "user@test.com", List.of());
 
-        assertThat(tokenProvider.parseAccessToken(token)).isEmpty();
+        assertThat(tokenProvider.obterClaimsAccessToken(token)).isEmpty();
     }
 
     @Test
     void should_reject_opaque_refresh_token() {
-        assertThat(tokenProvider.parseAccessToken("dXNlcjE.a-random-opaque-secret")).isEmpty();
+        assertThat(tokenProvider.obterClaimsAccessToken("dXNlcjE.a-random-opaque-secret")).isEmpty();
     }
 
     // --- Invalid tokens ---
 
     @Test
     void should_return_empty_for_invalid_token() {
-        assertThat(tokenProvider.parseAccessToken("not.a.jwt")).isEmpty();
+        assertThat(tokenProvider.obterClaimsAccessToken("not.a.jwt")).isEmpty();
     }
 
     @Test
     void should_return_empty_for_tampered_token() {
-        String token = tokenProvider.generateAccessToken("user1", "user@test.com", List.of());
+        String token = tokenProvider.gerarAccessToken("user1", "user@test.com", List.of());
 
-        assertThat(tokenProvider.parseAccessToken(token + "tampered")).isEmpty();
+        assertThat(tokenProvider.obterClaimsAccessToken(token + "tampered")).isEmpty();
     }
 
     @Test
     void should_return_empty_for_blank_token() {
-        assertThat(tokenProvider.parseAccessToken("")).isEmpty();
+        assertThat(tokenProvider.obterClaimsAccessToken("")).isEmpty();
     }
 
     // --- Configuration ---
