@@ -6,29 +6,29 @@ import lombok.Getter;
 import java.time.Duration;
 
 /**
- * Tokens issued for an authenticated session.
+ * Tokens emitidos para uma sessão autenticada.
  */
 @Getter
 @Builder
 public class TokenPair {
 
     /**
-     * Short-lived JWT used to authenticate requests.
+     * JWT de curta duração usado para autenticar request - solicitações.
      */
     private final String accessToken;
 
     /**
-     * Long-lived opaque secret used to rotate the session.
+     * Segredo opaco de longa duração usado para rotacionar a sessão.
      */
     private final String refreshToken;
 
     /**
-     * Access token lifetime.
+     * Tempo de vida do token de acesso.
      */
     private final Duration accessTokenTtl;
 
     /**
-     * Remaining refresh lifetime until the session ceiling.
+     * Tempo restante de atualização até o limite da sessão.
      */
     private final Duration refreshTokenTtl;
 
