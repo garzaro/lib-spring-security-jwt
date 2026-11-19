@@ -1,4 +1,4 @@
-package io.grzr74.security.auth.passwordless;
+package io.grzr74.security.api.semSenha;
 
 /**
  * Interface para envio de SMS — implemente utilizando Twilio, Vonage, AWS SNS, etc.

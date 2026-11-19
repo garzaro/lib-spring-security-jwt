@@ -1,4 +1,4 @@
-package io.grzr74.security.refresh;
+package io.grzr74.security.refresh.enums;
 
 /**
  * Outcome of an atomic refresh-token rotation.

@@ -1,5 +1,6 @@
-package io.grzr74.security.refresh;
+package io.grzr74.security.refresh.model;
 
+import io.grzr74.security.refresh.enums.RotationStatus;
 import lombok.Builder;
 import lombok.Getter;
 

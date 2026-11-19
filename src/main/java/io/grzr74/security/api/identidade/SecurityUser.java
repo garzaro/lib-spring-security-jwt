@@ -1,4 +1,4 @@
-package io.grzr74.security.user;
+package io.grzr74.security.api.identidade;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -24,22 +24,22 @@ import java.util.List;
 public class SecurityUser implements UserDetails {
 
 
-    /** Application user identifier. */
+    /** Identificador de usuário do aplicativo. */
     private final String userId;
 
-    /** User email used as the Spring Security username. */
+    /** O e-mail do usuário foi utilizado como nome de usuário do Spring Security. */
     private final String email;
 
     /**
-     * BCrypt-hashed password. Required for email/password login.
-     * May be {@code null} for passwordless-only users.
+     * Senha criptografada com Argon2. Obrigatória para login com e-mail/senha.
+     * * Pode ser {@code null} para usuários que não possuem senha.
      */
     private final String password;
 
-    /** Permission names mapped to granted authorities. */
+    /** Os nomes das permissões estão associados às autoridades que as concederam. */
     private final List<String> permissions;
 
-    /** Returns authorities derived from {@code permissions}. */
+    /** Retorna as autorizações derivadas de {@code permissions}. */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         if (permissions == null) {
@@ -51,8 +51,9 @@ public class SecurityUser implements UserDetails {
     }
 
     /**
-     * Returns the BCrypt-hashed password for credential-based login.
-     * Populate this field when building a {@link SecurityUser} for email/password auth.
+     * Retorna a senha criptografada com BCrypt para login baseado em credenciais.
+     * * Preencha este campo ao criar um {@link SecurityUser} para autenticação por
+     * e-mail/senha.
      */
     @Override
     public String getPassword() {
@@ -60,7 +61,7 @@ public class SecurityUser implements UserDetails {
     }
 
     /**
-     * Returns the email as the principal name.
+     * Retorna o e-mail como nome principal.
      */
     @Override
     public String getUsername() {

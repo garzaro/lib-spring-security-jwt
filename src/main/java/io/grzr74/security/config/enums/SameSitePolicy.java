@@ -1,4 +1,4 @@
-package io.grzr74.security.config;
+package io.grzr74.security.config.enums;
 
 /**
  * SameSite policy applied to the authentication cookies.
