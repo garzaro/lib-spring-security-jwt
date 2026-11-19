@@ -1,9 +1,19 @@
-package io.grzr74.security.user;
+package io.grzr74.security.api.identidade;
 
 import java.util.Optional;
 
 /**
  * Loads security users from the consuming application's data source.
+ *
+ * Dois pontos para documentar no contrato:
+ *
+ * [] Usuário desativado ou bloqueado: o SecurityUser não tem flag de conta,
+ * então o refresh só barra quem o consumidor deixar de retornar. Os findBy*
+ * devem devolver vazio nesses casos.
+ *
+ * [] E-mail mutável: se o consumidor permitir trocar o e-mail, o refresh token
+ * guarda o antigo, o lookup falha e o usuário é deslogado. É seguro, mas
+ * vale avisar nos sistemas que permitem a troca.
  */
 public interface SecurityUserService {
 

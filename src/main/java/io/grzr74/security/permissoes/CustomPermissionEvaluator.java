@@ -1,11 +1,10 @@
-package io.grzr74.security.permission;
+package io.grzr74.security.permissoes;
 
-import io.grzr74.security.user.SecurityUser;
+import io.grzr74.security.api.identidade.SecurityUser;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.access.PermissionEvaluator;
 import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Component;
 
 import java.io.Serializable;
 
