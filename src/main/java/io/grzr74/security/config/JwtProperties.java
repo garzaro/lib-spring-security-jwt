@@ -1,5 +1,6 @@
 package io.grzr74.security.config;
 
+import io.grzr74.security.config.enums.SameSitePolicy;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
@@ -13,18 +14,18 @@ import org.springframework.validation.annotation.Validated;
 import java.time.Duration;
 
 /**
- * Authentication settings bound to {@code grzr74.jwt}.
+ * Configurações de autenticação vinculadas a {@code grzr74.jwt}.
  */
 @Getter
 @Setter
 @Validated
 @ConfigurationProperties(prefix = "grzr74.jwt")
 public class JwtProperties {
-
+//ALTERAR PROPERTIES PARA RECORD, VER A MELHORIA QUE O BOOT RECOMENRDA E ALTERAR A SKILL
     /**
-     * HMAC signing secret shared by issuer and validator.
+     * Segredo de assinatura HMAC compartilhado pelo emissor e pelo validador.
      */
-    @NotBlank(message = "JWT secret must not be blank")
+    @NotBlank(message = "A chave secreta do JWT não pode estar em branco.")
     @Size(min = 32, message = "JWT secret must be at least 32 characters")
     private String secret;
 
@@ -65,7 +66,8 @@ public class JwtProperties {
      */
     @AssertTrue(message = "Access token TTL must be positive")
     public boolean isAccessTokenTtlPositive() {
-        return accessTokenTtl != null && !accessTokenTtl.isZero() && !accessTokenTtl.isNegative();
+        return accessTokenTtl != null && !accessTokenTtl.isZero() &&
+                !accessTokenTtl.isNegative();
     }
 
     /**
@@ -75,7 +77,8 @@ public class JwtProperties {
      */
     @AssertTrue(message = "Refresh token TTL must be positive")
     public boolean isRefreshTokenTtlPositive() {
-        return refreshTokenTtl != null && !refreshTokenTtl.isZero() && !refreshTokenTtl.isNegative();
+        return refreshTokenTtl != null && !refreshTokenTtl.isZero() &&
+                !refreshTokenTtl.isNegative();
     }
 
     /**

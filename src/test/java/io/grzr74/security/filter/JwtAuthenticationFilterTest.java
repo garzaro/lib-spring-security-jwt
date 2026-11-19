@@ -2,7 +2,7 @@ package io.grzr74.security.filter;
 
 import io.grzr74.security.config.JwtProperties;
 import io.grzr74.security.token.JwtTokenProvider;
-import io.grzr74.security.user.SecurityUser;
+import io.grzr74.security.api.identidade.SecurityUser;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +42,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     void should_authenticate_from_access_cookie() throws Exception {
-        String token = tokenProvider.generateAccessToken("user1", "user@test.com", List.of("USER_READ"));
+        String token = tokenProvider.gerarAccessToken("user1", "user@test.com", List.of("USER_READ"));
         MockHttpServletRequest request = requestWithCookie("access_token", token);
         MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -89,7 +89,7 @@ class JwtAuthenticationFilterTest {
 
     @Test
     void should_ignore_token_in_wrong_cookie() throws Exception {
-        String token = tokenProvider.generateAccessToken("user1", "user@test.com", List.of());
+        String token = tokenProvider.gerarAccessToken("user1", "user@test.com", List.of());
         MockHttpServletRequest request = requestWithCookie("refresh_token", token);
 
         filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());

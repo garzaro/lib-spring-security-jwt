@@ -6,24 +6,26 @@ import lombok.Getter;
 import java.util.List;
 
 /**
- * Verified access-token claims used to build the security context.
+ * Declarações
+ * claims de token de acesso verificadas usadas para construir
+ * o contexto de segurança.
  */
 @Getter
 @Builder
 public class AccessTokenClaims {
 
     /**
-     * Application user identifier.
+     * Identificador de usuário do aplicativo.
      */
     private final String userId;
 
     /**
-     * User email, stored as the JWT subject.
+     * E-mail do usuário, armazenado como subject do JWT.
      */
     private final String email;
 
     /**
-     * Permission names granted to the user.
+     * Nomes das permissões concedidas ao usuário.
      */
     private final List<String> permissions;
 

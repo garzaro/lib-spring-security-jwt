@@ -3,7 +3,7 @@ package io.grzr74.security.filter;
 import io.grzr74.security.config.JwtProperties;
 import io.grzr74.security.token.AccessTokenClaims;
 import io.grzr74.security.token.JwtTokenProvider;
-import io.grzr74.security.user.SecurityUser;
+import io.grzr74.security.api.identidade.SecurityUser;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -50,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * @param request current HTTP request
      */
     private void authenticate(final String token, final HttpServletRequest request) {
-        tokenProvider.parseAccessToken(token).ifPresent(claims -> {
+        tokenProvider.obterClaimsAccessToken(token).ifPresent(claims -> {
             SecurityUser securityUser = toSecurityUser(claims);
 
             UsernamePasswordAuthenticationToken authentication =

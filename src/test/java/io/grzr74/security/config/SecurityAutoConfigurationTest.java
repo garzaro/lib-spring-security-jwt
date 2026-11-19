@@ -1,12 +1,12 @@
 package io.grzr74.security.config;
 
-import io.grzr74.security.auth.AuthService;
+import io.grzr74.security.auth.service.AuthService;
 import io.grzr74.security.cookie.TokenCookieFactory;
 import io.grzr74.security.filter.JwtAuthenticationFilter;
-import io.grzr74.security.refresh.RefreshTokenService;
-import io.grzr74.security.refresh.RefreshTokenStore;
+import io.grzr74.security.refresh.service.RefreshTokenService;
+import io.grzr74.security.refresh.armazen.RefreshTokenStore;
 import io.grzr74.security.token.JwtTokenProvider;
-import io.grzr74.security.user.SecurityUserService;
+import io.grzr74.security.api.identidade.SecurityUserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;

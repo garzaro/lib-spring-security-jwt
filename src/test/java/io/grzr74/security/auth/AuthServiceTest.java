@@ -1,17 +1,18 @@
 package io.grzr74.security.auth;
 
-import io.grzr74.security.auth.passwordless.OtpService;
+import io.grzr74.security.auth.semSenha.OtpService;
+import io.grzr74.security.auth.service.AuthService;
 import io.grzr74.security.config.JwtProperties;
 import io.grzr74.security.exception.InvalidRefreshTokenException;
 import io.grzr74.security.exception.JwtSecurityException;
 import io.grzr74.security.exception.RefreshTokenReuseException;
-import io.grzr74.security.refresh.IssuedRefreshToken;
-import io.grzr74.security.refresh.RefreshTokenService;
-import io.grzr74.security.refresh.RotatedRefreshToken;
+import io.grzr74.security.refresh.model.IssuedRefreshToken;
+import io.grzr74.security.refresh.service.RefreshTokenService;
+import io.grzr74.security.refresh.model.RotatedRefreshToken;
 import io.grzr74.security.token.JwtTokenProvider;
 import io.grzr74.security.token.TokenPair;
-import io.grzr74.security.user.SecurityUser;
-import io.grzr74.security.user.SecurityUserService;
+import io.grzr74.security.api.identidade.SecurityUser;
+import io.grzr74.security.api.identidade.SecurityUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -76,7 +77,7 @@ class AuthServiceTest {
 
     @Test
     void should_issue_access_and_refresh_tokens() {
-        when(tokenProvider.generateAccessToken("user1", "user@test.com", user.getPermissions()))
+        when(tokenProvider.gerarAccessToken("user1", "user@test.com", user.getPermissions()))
                 .thenReturn("access");
         when(refreshTokenService.issue("user1", "user@test.com"))
                 .thenReturn(IssuedRefreshToken.builder().token("refresh").expiresIn(REFRESH_TTL).build());
@@ -108,7 +109,7 @@ class AuthServiceTest {
 
         when(refreshTokenService.rotate("old-refresh")).thenReturn(rotated);
         when(userService.findByEmail("user@test.com")).thenReturn(Optional.of(freshUser));
-        when(tokenProvider.generateAccessToken("user1", "user@test.com", freshUser.getPermissions()))
+        when(tokenProvider.gerarAccessToken("user1", "user@test.com", freshUser.getPermissions()))
                 .thenReturn("new-access");
 
         TokenPair pair = authService.refresh("old-refresh");
@@ -168,7 +169,7 @@ class AuthServiceTest {
     void should_login_with_valid_credentials() {
         when(userService.findByEmail("user@test.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("secret", "hash")).thenReturn(true);
-        when(tokenProvider.generateAccessToken("user1", "user@test.com", user.getPermissions()))
+        when(tokenProvider.gerarAccessToken("user1", "user@test.com", user.getPermissions()))
                 .thenReturn("access");
         when(refreshTokenService.issue("user1", "user@test.com"))
                 .thenReturn(IssuedRefreshToken.builder().token("refresh").expiresIn(REFRESH_TTL).build());

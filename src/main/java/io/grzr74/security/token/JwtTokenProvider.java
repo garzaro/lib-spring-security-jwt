@@ -73,9 +73,9 @@ public class JwtTokenProvider {
      * @param permissions valores de permissão armazenados nas claims
      * @return JWT assinado
      */
-    public String gerarteAccessToken(final String userId,
-                                     final String email,
-                                     final Collection<String> permissions
+    public String gerarAccessToken(final String userId,
+                                   final String email,
+                                   final Collection<String> permissions
     ) {
         Instant agora = Instant.now();
         Instant expiracao = agora.plus(properties.getAccessTokenTtl());

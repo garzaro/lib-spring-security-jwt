@@ -1,6 +1,7 @@
-package io.grzr74.security.permission;
+package io.grzr74.security.permissao;
 
-import io.grzr74.security.user.SecurityUser;
+import io.grzr74.security.api.identidade.SecurityUser;
+import io.grzr74.security.permissoes.CustomPermissionEvaluator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

@@ -1,5 +1,8 @@
 package io.grzr74.security.auth.passwordless;
 
+import io.grzr74.security.auth.semSenha.OtpService;
+import io.grzr74.security.auth.semSenha.armazen.OtpStore;
+import io.grzr74.security.api.semSenha.SmsPort;
 import io.grzr74.security.exception.JwtSecurityException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +24,7 @@ import static org.mockito.Mockito.when;
 class OtpServiceTest {
 
     @Mock private OtpStore otpStore;
-    @Mock private SmsPort  smsPort;
+    @Mock private SmsPort smsPort;
 
     private OtpService otpService;
 

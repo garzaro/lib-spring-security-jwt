@@ -1,7 +1,7 @@
 package io.grzr74.security.cookie;
 
 import io.grzr74.security.config.JwtProperties;
-import io.grzr74.security.config.SameSitePolicy;
+import io.grzr74.security.config.enums.SameSitePolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseCookie;

@@ -1,17 +1,17 @@
 package io.grzr74.security.config;
 
-import io.grzr74.security.auth.AuthService;
-import io.grzr74.security.auth.passwordless.OtpService;
-import io.grzr74.security.auth.passwordless.OtpStore;
-import io.grzr74.security.auth.passwordless.SmsPort;
+import io.grzr74.security.auth.service.AuthService;
+import io.grzr74.security.auth.semSenha.OtpService;
+import io.grzr74.security.auth.semSenha.armazen.OtpStore;
+import io.grzr74.security.api.semSenha.SmsPort;
 import io.grzr74.security.cookie.TokenCookieFactory;
 import io.grzr74.security.filter.JwtAuthenticationFilter;
-import io.grzr74.security.permission.CustomPermissionEvaluator;
-import io.grzr74.security.refresh.RedisRefreshTokenStore;
-import io.grzr74.security.refresh.RefreshTokenService;
-import io.grzr74.security.refresh.RefreshTokenStore;
+import io.grzr74.security.permissoes.CustomPermissionEvaluator;
+import io.grzr74.security.refresh.armazen.RedisRefreshTokenStore;
+import io.grzr74.security.refresh.service.RefreshTokenService;
+import io.grzr74.security.refresh.armazen.RefreshTokenStore;
 import io.grzr74.security.token.JwtTokenProvider;
-import io.grzr74.security.user.SecurityUserService;
+import io.grzr74.security.api.identidade.SecurityUserService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
