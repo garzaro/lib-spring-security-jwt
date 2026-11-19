@@ -1,4 +1,8 @@
-package io.grzr74.security.refresh;
+package io.grzr74.security.refresh.armazen;
+
+import io.grzr74.security.refresh.enums.RotationStatus;
+import io.grzr74.security.refresh.model.RefreshToken;
+import io.grzr74.security.refresh.model.RotationResult;
 
 import java.time.Duration;
 

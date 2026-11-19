@@ -1,4 +1,4 @@
-package io.grzr74.security.auth.model;
+package io.grzr74.security.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

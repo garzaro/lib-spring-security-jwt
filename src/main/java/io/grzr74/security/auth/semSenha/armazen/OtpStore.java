@@ -1,4 +1,4 @@
-package io.grzr74.security.auth.passwordless;
+package io.grzr74.security.auth.semSenha.armazen;
 
 import java.time.Duration;
 import java.util.Optional;

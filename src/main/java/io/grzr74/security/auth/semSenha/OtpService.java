@@ -1,5 +1,7 @@
-package io.grzr74.security.auth.passwordless;
+package io.grzr74.security.auth.semSenha;
 
+import io.grzr74.security.auth.semSenha.armazen.OtpStore;
+import io.grzr74.security.api.semSenha.SmsPort;
 import io.grzr74.security.exception.JwtSecurityException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

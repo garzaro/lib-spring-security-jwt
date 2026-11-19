@@ -1,4 +1,4 @@
-package io.grzr74.security.refresh;
+package io.grzr74.security.refresh.model;
 
 import lombok.Builder;
 import lombok.Getter;
