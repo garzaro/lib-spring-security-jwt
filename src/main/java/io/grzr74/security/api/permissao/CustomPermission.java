@@ -1,4 +1,4 @@
-package io.grzr74.security.permission;
+package io.grzr74.security.api.permissao;
 
 /**
  * Contrato para constantes de permissão de aplicativo.

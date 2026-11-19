@@ -1,4 +1,4 @@
-package io.grzr74.security.permission;
+package io.grzr74.security.permissoes;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 

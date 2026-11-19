@@ -1,16 +1,16 @@
-package io.grzr74.security.auth;
+package io.grzr74.security.auth.service;
 
-import io.grzr74.security.auth.passwordless.OtpService;
+import io.grzr74.security.auth.semSenha.OtpService;
 import io.grzr74.security.config.JwtProperties;
 import io.grzr74.security.exception.InvalidRefreshTokenException;
 import io.grzr74.security.exception.JwtSecurityException;
-import io.grzr74.security.refresh.IssuedRefreshToken;
-import io.grzr74.security.refresh.RefreshTokenService;
-import io.grzr74.security.refresh.RotatedRefreshToken;
+import io.grzr74.security.refresh.model.IssuedRefreshToken;
+import io.grzr74.security.refresh.service.RefreshTokenService;
+import io.grzr74.security.refresh.model.RotatedRefreshToken;
 import io.grzr74.security.token.JwtTokenProvider;
 import io.grzr74.security.token.TokenPair;
-import io.grzr74.security.user.SecurityUser;
-import io.grzr74.security.user.SecurityUserService;
+import io.grzr74.security.api.identidade.SecurityUser;
+import io.grzr74.security.api.identidade.SecurityUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -40,7 +40,7 @@ public class AuthService {
      * @return access and refresh tokens with their lifetimes
      */
     public TokenPair issue(final SecurityUser user) {
-        String accessToken = tokenProvider.generateAccessToken(
+        String accessToken = tokenProvider.gerarAccessToken(
                 user.getUserId(),
                 user.getEmail(),
                 user.getPermissions());
@@ -150,7 +150,7 @@ public class AuthService {
      * @return access and refresh tokens with their lifetimes
      */
     private TokenPair tokenPair(final SecurityUser user, final RotatedRefreshToken rotated) {
-        String accessToken = tokenProvider.generateAccessToken(
+        String accessToken = tokenProvider.gerarAccessToken(
                 user.getUserId(),
                 user.getEmail(),
                 user.getPermissions());
