@@ -1,43 +1,42 @@
 package io.grzr74.security.config.enums;
 
 /**
- * SameSite policy applied to the authentication cookies.
+ * A política SameSite aplicada aos cookies de autenticação.
  */
 public enum SameSitePolicy {
 
     /**
-     * Cookie is sent only to same-site requests.
+     * O cookie é enviado apenas para solicitações do mesmo site.
      */
     STRICT("Strict"),
 
     /**
-     * Cookie is sent on same-site requests and top-level cross-site navigation.
+     * Os cookies são enviados em solicitações dentro do mesmo
+     * site e na navegação entre sites de nível superior.
      */
     LAX("Lax"),
 
     /**
-     * Cookie is sent on every request and requires {@code Secure}.
+     * Um cookie é enviado em cada solicitação e requer {@code Secure}.
      */
     NONE("None");
 
     /**
-     * Value written in the {@code SameSite} cookie attribute.
+     * Valor escrito no atributo de cookie {@code SameSite}.
      */
     private final String attributeValue;
 
     /**
-     * Creates a policy with its cookie attribute value.
-     *
-     * @param attributeValue value written to the browser
+     * Cria uma política com o valor do atributo de cookie.
+     * @param attributeValue valor gravado no navegador
      */
     SameSitePolicy(final String attributeValue) {
         this.attributeValue = attributeValue;
     }
 
     /**
-     * Returns the value written in the {@code SameSite} cookie attribute.
-     *
-     * @return attribute value
+     * Retorna o valor escrito no atributo do cookie {@code SameSite}.
+     * @return valor do atributo
      */
     public String attributeValue() {
         return attributeValue;
