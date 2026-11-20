@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * Declarações
- * claims de token de acesso verificadas usadas para construir
+ * claims de access token verificadas usadas para construir
  * o contexto de segurança.
  */
 @Getter
