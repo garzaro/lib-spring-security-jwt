@@ -14,15 +14,16 @@ import org.springframework.validation.annotation.Validated;
 import java.time.Duration;
 
 /**
- * Configurações de autenticação vinculadas a {@code grzr74.jwt}.
+ * Fonte única de configuração da autenticação JWT desta lib.
+ * Faz o binding de {@code grzr74.jwt} para segredo HMAC, emissor, TTLs de
+ * access/refresh, cookies HttpOnly e prefixo Redis do armazenamento de refresh.
  */
 @Getter
 @Setter
 @Validated
 @ConfigurationProperties(prefix = "grzr74.jwt")
 public class JwtProperties {
-//ALTERAR PROPERTIES PARA RECORD, VER A MELHORIA QUE O BOOT RECOMENRDA E ALTERAR A SKILL
-    /**
+     /**
      * Segredo de assinatura HMAC compartilhado pelo emissor e pelo validador.
      */
     @NotBlank(message = "A chave secreta do JWT não pode estar em branco.")
@@ -30,120 +31,122 @@ public class JwtProperties {
     private String secret;
 
     /**
-     * JWT {@code iss} claim value (default: {@code "grzr74"}).
+     * Valor da declaração JWT {@code iss} (padrão: {@code "grzr74"}).
      */
-    @NotBlank(message = "JWT issuer must not be blank")
+    @NotBlank(message = "O emissor do JWT não pode estar em branco.")
     private String issuer = "grzr74";
 
     /**
-     * Access token lifetime (default: 5 minutes).
+     * Tempo de vida do token de acesso (padrão: 5 minutos).
      */
-    @NotNull(message = "Access token TTL must not be null")
+    @NotNull(message = "O token de acesso TTL não deve ser nulo")
     private Duration accessTokenTtl = Duration.ofMinutes(5);
 
     /**
-     * Session ceiling, fixed per family from login; rotation never extends it (default: 7 days).
+     * Limite de permanência, fixo por família a partir do login;
+     * rotação nunca ocorre. Estende o período (padrão: 7 dias).
      */
-    @NotNull(message = "Refresh token TTL must not be null")
+    @NotNull(message = "O tempo de vida (TTL) do token de atualização não pode ser nulo.")
     private Duration refreshTokenTtl = Duration.ofDays(7);
 
     /**
-     * Cookie delivery settings for both tokens.
+     * Configurações de entrega de cookies para ambos os tokens.
      */
     @Valid
     private Cookie cookie = new Cookie();
 
     /**
-     * Redis key settings for the refresh-token store.
+     * Configurações de chave do Redis para o armazenamento de tokens de atualização.
      */
     @Valid
     private Redis redis = new Redis();
 
     /**
-     * Returns {@code true} when the access token TTL is positive.
-     *
-     * @return validation result
+     * Retorna {@code true} quando o TTL do token de acesso for positivo.
+     * @return resultado de validação
      */
-    @AssertTrue(message = "Access token TTL must be positive")
+    @AssertTrue(message = "O TTL do token de acesso deve ser positivo.")
     public boolean isAccessTokenTtlPositive() {
         return accessTokenTtl != null && !accessTokenTtl.isZero() &&
                 !accessTokenTtl.isNegative();
     }
 
     /**
-     * Returns {@code true} when the refresh token ceiling is positive.
-     *
-     * @return validation result
+     * Retorna {@code true} quando o limite do token de atualização for positivo.
+     * @return resultado da validação
      */
-    @AssertTrue(message = "Refresh token TTL must be positive")
+    @AssertTrue(message = "O TTL do token de atualização deve ser positivo.")
     public boolean isRefreshTokenTtlPositive() {
         return refreshTokenTtl != null && !refreshTokenTtl.isZero() &&
                 !refreshTokenTtl.isNegative();
     }
 
     /**
-     * HttpOnly cookie settings for access and refresh tokens.
+     * Configurações de cookies HttpOnly para tokens de acesso e atualização.
+     * Define como access e refresh tokens são entregues ao cliente via cookies HttpOnly.
+     * Controla nomes, path, domínio, flag Secure e política SameSite de ambos os cookies.
      */
     @Getter
     @Setter
     public static class Cookie {
 
         /**
-         * Cookie name that carries the access token (default: {@code access_token}).
+         * Nome do cookie que contém o token de acesso (padrão: {@code access_token}).
          */
-        @NotBlank(message = "Access cookie name must not be blank")
+        @NotBlank(message = "O nome do cookie de acesso não pode estar em branco.")
         private String accessName = "access_token";
 
         /**
-         * Cookie name that carries the refresh token (default: {@code refresh_token}).
+         * Nome do cookie que contém o token de atualização (padrão: {@code refresh_token}).
          */
-        @NotBlank(message = "Refresh cookie name must not be blank")
+        @NotBlank(message = "O nome do cookie de atualização não pode estar em branco.")
         private String refreshName = "refresh_token";
 
         /**
-         * Cookie path shared by both tokens (default: {@code /}).
+         * Caminho do cookie compartilhado por ambos os tokens (padrão: {@code /}).
          */
-        @NotBlank(message = "Cookie path must not be blank")
+        @NotBlank(message = "O caminho do cookie não deve estar em branco.")
         private String path = "/";
 
         /**
-         * Optional cookie domain; left unset for host-only cookies.
+         * Domínio de cookie opcional; deixe em branco para cookies exclusivos do host.
          */
         private String domain;
 
         /**
-         * Marks cookies as Secure (default: {@code true}).
+         * Marca os cookies como seguros (padrão: {@code true}).
          */
         private boolean secure = true;
 
         /**
-         * SameSite policy applied to both cookies (default: {@code Strict}).
+         * Política SameSite aplicada a ambos os cookies (padrão: {@code Strict}).
          */
-        @NotNull(message = "SameSite policy must not be null")
+        @NotNull(message = "A política SameSite não pode ser nula.")
         private SameSitePolicy sameSite = SameSitePolicy.STRICT;
 
         /**
-         * Returns {@code true} unless SameSite=None is requested without Secure.
-         *
-         * @return validation result
+         *Retorna {@code true} a menos que SameSite=None seja solicitado sem Secure.
+         * @return resultado da validação
          */
-        @AssertTrue(message = "SameSite=None requires secure=true")
+        @AssertTrue(message = "SameSite=None requer secure=true")
         public boolean isSameSiteSecure() {
             return sameSite != SameSitePolicy.NONE || secure;
         }
     }
 
     /**
-     * Redis key layout used by the default refresh-token store.
+     * Layout de chave Redis usado pelo armazenamento padrão de refresh tokens.
+     * Define o layout de chaves Redis do armazenamento padrão de refresh tokens.
+     * Isola o namespace via prefixo aplicado a todas as chaves da família de refresh.
      */
     @Getter
     @Setter
     public static class Redis {
 
         /**
-         * Prefix prepended to every Redis key (default: {@code grzr74:auth:}).
+         * Prefixo adicionado a cada chave Redis (padrão: {@code grzr74:auth:}).
          */
-        @NotBlank(message = "Redis key prefix must not be blank")
+        @NotBlank(message = "O prefixo da chave Redis não pode estar em branco.")
         private String keyPrefix = "grzr74:auth:";
     }
 }
