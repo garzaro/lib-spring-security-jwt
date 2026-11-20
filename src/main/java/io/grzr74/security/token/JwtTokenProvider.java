@@ -17,7 +17,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Cria e valida tokens de acesso usando {@link JwtProperties}.
+ * Emite e valida access tokens JWT assinados com HMAC.
+ * Usa {@link JwtProperties} para segredo, emissor e TTL; rejeita tokens
+ * com assinatura, expiração, emissor ou finalidade inválidos.
  */
 @Slf4j
 public class JwtTokenProvider {
