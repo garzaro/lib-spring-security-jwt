@@ -4,9 +4,9 @@ import io.grzr74.security.auth.semSenha.OtpService;
 import io.grzr74.security.config.JwtProperties;
 import io.grzr74.security.exception.InvalidRefreshTokenException;
 import io.grzr74.security.exception.JwtSecurityException;
-import io.grzr74.security.refresh.model.IssuedRefreshToken;
+import io.grzr74.security.refresh.model.RefreshTokenEmitido;
 import io.grzr74.security.refresh.service.RefreshTokenService;
-import io.grzr74.security.refresh.model.RotatedRefreshToken;
+import io.grzr74.security.refresh.model.RefreshTokenRotacionado;
 import io.grzr74.security.token.JwtTokenProvider;
 import io.grzr74.security.token.TokenPair;
 import io.grzr74.security.api.identidade.SecurityUser;
@@ -31,20 +31,21 @@ public class AuthService {
     private final JwtProperties properties;
     private final ObjectProvider<OtpService> otpService;
 
-    // --- Token lifecycle ---
+    // --- Ciclo de vida do Token ---
 
     /**
-     * Issues a new token pair for an already authenticated user, starting a new family.
-     *
-     * @param user authenticated user with identity and permissions
-     * @return access and refresh tokens with their lifetimes
+     * Emite um novo par de tokens para um usuário já autenticado, iniciando uma nova família.
+     * @param usuario usuário autenticado, com sua identidade e permissões
+     * @return tokens de acesso e de atualização (refresh tokens), juntamente com seus
+     * respectivos tempos de validade
      */
-    public TokenPair issue(final SecurityUser user) {
+    public TokenPair emitirPares(final SecurityUser usuario) {
         String accessToken = tokenProvider.gerarAccessToken(
-                user.getUserId(),
-                user.getEmail(),
-                user.getPermissions());
-        IssuedRefreshToken refreshToken = refreshTokenService.issue(user.getUserId(), user.getEmail());
+                usuario.getUserId(),
+                usuario.getEmail(),
+                usuario.getPermissions());
+        RefreshTokenEmitido refreshToken = refreshTokenService
+                .emitirRefresh(usuario.getUserId(), usuario.getEmail());
 
         return TokenPair.builder()
                 .accessToken(accessToken)
@@ -55,123 +56,131 @@ public class AuthService {
     }
 
     /**
-     * Rotates a refresh token, resolves fresh roles, and issues a new token pair.
+     * Realiza a rotação de um token de atualização (*refresh token*), determina as funções
+     * (*roles*) atualizadas e emite um novo par de tokens.
      *
-     * @param refreshToken current raw refresh secret
-     * @return new access and refresh tokens with their lifetimes
-     * @throws InvalidRefreshTokenException when the refresh is invalid, expired, or its user no longer exists
+     * @param refreshToken o *refresh token* atual (valor bruto)
+     * @return novos tokens de acesso e de atualização, juntamente com seus respectivos
+     * tempos de validade
+     * @throws InvalidRefreshTokenException caso o *refresh token* seja inválido, esteja
+     * expirado ou o usuário associado a ele não exista mais
      */
     public TokenPair refresh(final String refreshToken) {
-        RotatedRefreshToken rotated = refreshTokenService.rotate(refreshToken);
+        RefreshTokenRotacionado rotacionado = refreshTokenService.rotate(refreshToken);
 
-        SecurityUser user = userService.findByEmail(rotated.getEmail()).orElse(null);
-        if (user == null) {
-            refreshTokenService.revokeFamily(rotated.getToken());
+        SecurityUser usuario = userService
+                .findByEmail(rotacionado.getEmail()).orElse(null);
+        if (usuario == null) {
+            refreshTokenService.revogarFamilia(rotacionado.getToken());
             throw new InvalidRefreshTokenException();
         }
 
-        return tokenPair(user, rotated);
+        return tokenPair(usuario, rotacionado);
     }
 
     /**
-     * Revokes the family that owns the refresh token.
-     *
-     * @param refreshToken raw refresh secret from the cookie
+     * Revoga a família à qual pertence o token de atualização (refresh token).
+     * @param refreshToken o segredo de atualização (refresh secret) bruto obtido do cookie
      */
     public void logout(final String refreshToken) {
-        refreshTokenService.revokeFamily(refreshToken);
-        log.debug("Session revoked");
+        refreshTokenService.revogarFamilia(refreshToken);
+        log.debug("Sessão revogada");
     }
 
     /**
-     * Revokes all sessions for a user (for example, after a password change).
-     *
-     * @param userId user identifier
+     * Revoga todas as sessões de um usuário (por exemplo, após uma alteração de senha).
+     * @param userId identificador do usuário
      */
     public void revokeAll(final String userId) {
-        refreshTokenService.revokeAll(userId);
-        log.debug("All sessions revoked for user: {}", userId);
+        refreshTokenService.revogaAll(userId);
+        log.debug("Todo as sessões regogadas para o usuario: {}", userId);
     }
 
     // --- Email / Password ---
 
     /**
-     * Authenticates a user with email and password.
-     *
-     * @param email    user email
-     * @param password raw password
-     * @return token pair to be delivered through cookies
-     * @throws JwtSecurityException if credentials are invalid
+     * Autentica um usuário por meio de e-mail e senha.
+     * @param email    e-mail do usuário
+     * @param password senha sem criptografia
+     * @return par de tokens a ser entregue por meio de cookies
+     * @throws JwtSecurityException caso as credenciais sejam inválidas
      */
     public TokenPair login(final String email, final String password) {
-        SecurityUser user = userService.findByEmail(email).orElseThrow(JwtSecurityException::unauthorized);
+        SecurityUser usuario = userService
+                .findByEmail(email)
+                .orElseThrow(JwtSecurityException::unauthorized);
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
-            log.warn("Failed login attempt for email: {}", email);
+        if (!passwordEncoder.matches(password, usuario.getPassword())) {
+            log.warn("Tentativa de login malsucedida para o e-mail: {}", email);
             throw JwtSecurityException.unauthorized();
         }
 
-        return issue(user);
+        return emitirPares(usuario);
     }
 
-    // --- Passwordless SMS ---
+    // --- SMS sem senha ---
 
     /**
-     * Initiates passwordless authentication by sending an OTP to the given phone.
-     *
-     * @param phone E.164 phone number
+     * Inicia a autenticação sem senha enviando um código de uso único (OTP) para o
+     * número de telefone fornecido.
+     * @param telefone Número de telefone no formato E.164
      */
-    public void initiateOtpLogin(final String phone) {
-        otpService().sendOtp(phone);
+    public void inicializarOtpLogin(final String senha) {
+        otpService().enviarOtp(senha);
     }
 
     /**
-     * Completes passwordless authentication by verifying the OTP.
-     *
-     * @param phone E.164 phone number
-     * @param code  submitted OTP code
-     * @return token pair to be delivered through cookies
+     * Conclui a autenticação sem senha por meio da verificação do OTP.
+     * @param telefone Número de telefone no formato E.164
+     * @param codigo  Código OTP enviado
+     * @return Par de tokens a ser entregue por meio de cookies
      */
-    public TokenPair verifyOtpLogin(final String phone, final String code) {
-        otpService().verifyOtp(phone, code);
+    public TokenPair verificarOtpLogin(final String telefone, final String codigo) {
+        otpService().verificarOtp(telefone, codigo);
 
-        SecurityUser user = userService.findByPhone(phone).orElseThrow(JwtSecurityException::unauthorized);
+        SecurityUser usuario = userService.
+                findByTelefone(telefone)
+                .orElseThrow(JwtSecurityException::unauthorized);
 
-        return issue(user);
+        return emitirPares(usuario);
     }
 
-    // --- Internal ---
+    // --- Interno ---
 
     /**
-     * Builds a token pair from a fresh user lookup and a rotated refresh secret.
+     * Cria um par de tokens a partir de uma consulta atualizada do usuário e de um
+     * segredo de renovação (refresh secret) rotacionado.
      *
-     * @param user    user with fresh permissions
-     * @param rotated rotated refresh token data
-     * @return access and refresh tokens with their lifetimes
+     * @param usuario    usuário com permissões atualizadas
+     * @param rotacionado dados do token de renovação (refresh token) rotacionado
+     * @return tokens de acesso e de renovação, juntamente com seus respectivos
+     * tempos de validade
      */
-    private TokenPair tokenPair(final SecurityUser user, final RotatedRefreshToken rotated) {
+    private TokenPair tokenPair(
+            final SecurityUser usuario,
+            final RefreshTokenRotacionado rotacionado
+    ) {
         String accessToken = tokenProvider.gerarAccessToken(
-                user.getUserId(),
-                user.getEmail(),
-                user.getPermissions());
+                usuario.getUserId(),
+                usuario.getEmail(),
+                usuario.getPermissions());
 
         return TokenPair.builder()
                 .accessToken(accessToken)
-                .refreshToken(rotated.getToken())
+                .refreshToken(rotacionado.getToken())
                 .accessTokenTtl(properties.getAccessTokenTtl())
-                .refreshTokenTtl(rotated.getExpiresIn())
+                .refreshTokenTtl(rotacionado.getExpiresIn())
                 .build();
     }
 
     /**
-     * Returns the configured OTP service or fails when the flow is not available.
-     *
-     * @return OTP service
+     * Retorna o serviço de OTP configurado ou falha caso o fluxo não esteja disponível.
+     * @return Serviço de OTP
      */
     private OtpService otpService() {
         OtpService service = otpService.getIfAvailable();
         if (service == null) {
-            throw new IllegalStateException("OTP flow is not configured: provide OtpStore and SmsPort beans");
+            throw new IllegalStateException("O fluxo de OTP não está configurado: forneça os beans OtpStore e SmsPort.");
         }
         return service;
     }

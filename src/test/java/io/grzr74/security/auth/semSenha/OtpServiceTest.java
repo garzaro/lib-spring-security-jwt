@@ -1,8 +1,7 @@
-package io.grzr74.security.auth.passwordless;
+package io.grzr74.security.auth.semSenha;
 
-import io.grzr74.security.auth.semSenha.OtpService;
-import io.grzr74.security.auth.semSenha.armazen.OtpStore;
-import io.grzr74.security.api.semSenha.SmsPort;
+import io.grzr74.security.auth.semSenha.armazen.ArmazenamentoOtp;
+import io.grzr74.security.api.semSenha.EnvioSms;
 import io.grzr74.security.exception.JwtSecurityException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,57 +22,57 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class OtpServiceTest {
 
-    @Mock private OtpStore otpStore;
-    @Mock private SmsPort smsPort;
+    @Mock private ArmazenamentoOtp otpStore;
+    @Mock private EnvioSms envioSms;
 
     private OtpService otpService;
 
     @BeforeEach
     void setup() {
-        otpService = new OtpService(otpStore, smsPort);
+        otpService = new OtpService(otpStore, envioSms);
     }
 
     @Test
     void should_generate_and_send_otp() {
-        otpService.sendOtp("+33612345678");
+        otpService.enviarOtp("+33612345678");
 
-        verify(otpStore).save(eq("+33612345678"), any(String.class), any(Duration.class));
-        verify(smsPort).send(eq("+33612345678"), any(String.class));
+        verify(otpStore).salvarCodigoOtp(eq("+33612345678"), any(String.class), any(Duration.class));
+        verify(envioSms).envioMensagem(eq("+33612345678"), any(String.class));
     }
 
     @Test
     void should_verify_valid_otp() {
-        when(otpStore.find("+33612345678")).thenReturn(Optional.of("123456"));
+        when(otpStore.procurarTelefone("+33612345678")).thenReturn(Optional.of("123456"));
 
         assertThatNoException().isThrownBy(() ->
-                otpService.verifyOtp("+33612345678", "123456"));
+                otpService.verificarOtp("+33612345678", "123456"));
 
-        verify(otpStore).delete("+33612345678");
+        verify(otpStore).deletarTelefone("+33612345678");
     }
 
     @Test
     void should_throw_when_otp_not_found() {
-        when(otpStore.find("+33612345678")).thenReturn(Optional.empty());
+        when(otpStore.procurarTelefone("+33612345678")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> otpService.verifyOtp("+33612345678", "123456"))
+        assertThatThrownBy(() -> otpService.verificarOtp("+33612345678", "123456"))
                 .isInstanceOf(JwtSecurityException.class)
                 .hasMessageContaining("OTP expirado");
     }
 
     @Test
     void should_throw_when_otp_is_invalid() {
-        when(otpStore.find("+33612345678")).thenReturn(Optional.of("123456"));
+        when(otpStore.procurarTelefone("+33612345678")).thenReturn(Optional.of("123456"));
 
-        assertThatThrownBy(() -> otpService.verifyOtp("+33612345678", "999999"))
+        assertThatThrownBy(() -> otpService.verificarOtp("+33612345678", "999999"))
                 .isInstanceOf(JwtSecurityException.class)
                 .hasMessageContaining("Código OTP inválido");
     }
 
     @Test
     void should_not_delete_otp_on_failed_verification() {
-        when(otpStore.find("+33612345678")).thenReturn(Optional.of("123456"));
+        when(otpStore.procurarTelefone("+33612345678")).thenReturn(Optional.of("123456"));
 
-        assertThatThrownBy(() -> otpService.verifyOtp("+33612345678", "000000"))
+        assertThatThrownBy(() -> otpService.verificarOtp("+33612345678", "000000"))
                 .isInstanceOf(JwtSecurityException.class);
     }
 }

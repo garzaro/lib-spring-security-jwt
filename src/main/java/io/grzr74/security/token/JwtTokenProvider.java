@@ -32,7 +32,7 @@ public class JwtTokenProvider {
     /**
      * A permissão nomeia a claim.
      */
-    private static final String CLAIM_PERMISSIONS = "permissions";
+    private static final String CLAIM_PERMISSIONS = "permissons";
 
     /**
      * claim de identificador de usuário.
@@ -128,7 +128,7 @@ public class JwtTokenProvider {
             return Optional.of(AccessTokenClaims.builder()
                     .userId(claims.get(CLAIM_USER_ID, String.class))
                     .email(claims.getSubject())
-                    .permissions(readPermissions(claims))
+                    .permissions(leiaPermissoes(claims))
                     .build());
         } catch (JwtException | IllegalArgumentException ex) {
             log.debug("Token de acesso inválido: {}", ex.getMessage());
@@ -141,9 +141,10 @@ public class JwtTokenProvider {
      * @param claims declarações JWT verificadas
      * @return nomes das permissões
      */
-    private List<String> readPermissions(final Claims claims) {
+    private List<String> leiaPermissoes(final Claims claims) {
+        // A claim de permissões é opcional, então pode ser nula ou de tipo inesperado.
         Object raw = claims.get(CLAIM_PERMISSIONS);
-        if (raw instanceof List<?> list) {
+        if (raw instanceof List<?> list) {                        
             return list.stream().map(String::valueOf).toList();
         }
         return List.of();

@@ -6,9 +6,8 @@ package io.grzr74.security.api.permissao;
 public interface CustomPermission {
 
     /**
-     * Retorna o nome da permissão conforme armazenado nas declarações (claims) do JWT.
-     *
+     * Retorna o nome da permissão conforme armazenado nas claims do JWT.
      * @return nome da permissão
      */
-    String getName();
+    String obterNome();
 }

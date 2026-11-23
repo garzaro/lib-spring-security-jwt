@@ -6,9 +6,9 @@ import io.grzr74.security.config.JwtProperties;
 import io.grzr74.security.exception.InvalidRefreshTokenException;
 import io.grzr74.security.exception.JwtSecurityException;
 import io.grzr74.security.exception.RefreshTokenReuseException;
-import io.grzr74.security.refresh.model.IssuedRefreshToken;
+import io.grzr74.security.refresh.model.RefreshTokenEmitido;
 import io.grzr74.security.refresh.service.RefreshTokenService;
-import io.grzr74.security.refresh.model.RotatedRefreshToken;
+import io.grzr74.security.refresh.model.RefreshTokenRotacionado;
 import io.grzr74.security.token.JwtTokenProvider;
 import io.grzr74.security.token.TokenPair;
 import io.grzr74.security.api.identidade.SecurityUser;
@@ -76,13 +76,14 @@ class AuthServiceTest {
     // --- Issue ---
 
     @Test
-    void should_issue_access_and_refresh_tokens() {
+    void should_emitir_Pares_access_and_refresh_tokens() {
         when(tokenProvider.gerarAccessToken("user1", "user@test.com", user.getPermissions()))
                 .thenReturn("access");
-        when(refreshTokenService.issue("user1", "user@test.com"))
-                .thenReturn(IssuedRefreshToken.builder().token("refresh").expiresIn(REFRESH_TTL).build());
+        when(refreshTokenService.emitirRefresh("user1", "user@test.com"))
+                .thenReturn(RefreshTokenEmitido.builder().token("refresh")
+                        .tempoRestanteExpiracao(REFRESH_TTL).build());
 
-        TokenPair pair = authService.issue(user);
+        TokenPair pair = authService.emitirPares(user);
 
         assertThat(pair.getAccessToken()).isEqualTo("access");
         assertThat(pair.getRefreshToken()).isEqualTo("refresh");
@@ -99,11 +100,11 @@ class AuthServiceTest {
                 .email("user@test.com")
                 .permissions(List.of("USER_READ", "ORDER_WRITE"))
                 .build();
-        RotatedRefreshToken rotated = RotatedRefreshToken.builder()
+        RefreshTokenRotacionado rotated = RefreshTokenRotacionado.builder()
                 .token("new-refresh")
-                .expiresIn(Duration.ofDays(3))
-                .familyId("family-1")
-                .userId("user1")
+                .expiraEm(Duration.ofDays(3))
+                .familiaId("family-1")
+                .usuarioId("user1")
                 .email("user@test.com")
                 .build();
 
@@ -121,11 +122,11 @@ class AuthServiceTest {
 
     @Test
     void should_revoke_rotated_family_when_user_no_longer_exists() {
-        RotatedRefreshToken rotated = RotatedRefreshToken.builder()
+        RefreshTokenRotacionado rotated = RefreshTokenRotacionado.builder()
                 .token("new-refresh")
-                .expiresIn(Duration.ofDays(3))
-                .familyId("family-1")
-                .userId("user1")
+                .expiraEm(Duration.ofDays(3))
+                .familiaId("family-1")
+                .usuarioId("user1")
                 .email("user@test.com")
                 .build();
         when(refreshTokenService.rotate("old-refresh")).thenReturn(rotated);
@@ -134,7 +135,7 @@ class AuthServiceTest {
         assertThatThrownBy(() -> authService.refresh("old-refresh"))
                 .isInstanceOf(InvalidRefreshTokenException.class);
 
-        verify(refreshTokenService).revokeFamily("new-refresh");
+        verify(refreshTokenService).revogarFamilia("new-refresh");
         verifyNoInteractions(tokenProvider);
     }
 
@@ -153,14 +154,14 @@ class AuthServiceTest {
     void should_revoke_family_on_logout() {
         authService.logout("refresh");
 
-        verify(refreshTokenService).revokeFamily("refresh");
+        verify(refreshTokenService).revogarFamilia("refresh");
     }
 
     @Test
     void should_revoke_all_sessions_for_user() {
         authService.revokeAll("user1");
 
-        verify(refreshTokenService).revokeAll("user1");
+        verify(refreshTokenService).revogaAll("user1");
     }
 
     // --- Login ---
@@ -171,8 +172,9 @@ class AuthServiceTest {
         when(passwordEncoder.matches("secret", "hash")).thenReturn(true);
         when(tokenProvider.gerarAccessToken("user1", "user@test.com", user.getPermissions()))
                 .thenReturn("access");
-        when(refreshTokenService.issue("user1", "user@test.com"))
-                .thenReturn(IssuedRefreshToken.builder().token("refresh").expiresIn(REFRESH_TTL).build());
+        when(refreshTokenService.emitirRefresh("user1", "user@test.com"))
+                .thenReturn(RefreshTokenEmitido.builder().token("refresh")
+                        .tempoRestanteExpiracao(REFRESH_TTL).build());
 
         TokenPair pair = authService.login("user@test.com", "secret");
 
@@ -205,7 +207,7 @@ class AuthServiceTest {
 
     @Test
     void should_fail_otp_flow_when_not_configured() {
-        assertThatThrownBy(() -> authService.initiateOtpLogin("+33612345678"))
+        assertThatThrownBy(() -> authService.inicializarOtpLogin("+33612345678"))
                 .isInstanceOf(IllegalStateException.class);
     }
 
@@ -214,8 +216,8 @@ class AuthServiceTest {
         OtpService otpService = org.mockito.Mockito.mock(OtpService.class);
         when(otpServiceProvider.getIfAvailable()).thenReturn(otpService);
 
-        authService.initiateOtpLogin("+33612345678");
+        authService.inicializarOtpLogin("+33612345678");
 
-        verify(otpService).sendOtp("+33612345678");
+        verify(otpService).enviarOtp("+33612345678");
     }
 }
