@@ -1,22 +1,22 @@
 package io.grzr74.security.refresh.enums;
 
 /**
- * Outcome of an atomic refresh-token rotation.
+ * Resultado de uma rotação atômica de token de atualização.
  */
 public enum RotationStatus {
 
     /**
-     * The token was valid, consumed, and replaced.
+     * O token era válido, foi consumido e substituído.
      */
-    ROTATED,
+    ROTACIONADO,
 
     /**
-     * The token does not exist, is expired, or belongs to a revoked family.
+     * O token não existe, está expirado ou pertence a uma família revogada.
      */
-    INVALID,
+    INVALIDO,
 
     /**
-     * The token was already consumed; the whole family was revoked.
+     * O token já havia sido consumido; o conjunto inteiro foi revogado.
      */
-    REUSED
+    REUTILIZADO
 }

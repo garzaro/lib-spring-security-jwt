@@ -1,13 +1,14 @@
 package io.grzr74.security.refresh.service;
 
+
 import io.grzr74.security.config.JwtProperties;
 import io.grzr74.security.exception.InvalidRefreshTokenException;
 import io.grzr74.security.exception.RefreshTokenReuseException;
-import io.grzr74.security.refresh.armazen.RefreshTokenStore;
+import io.grzr74.security.refresh.armazen.RefreshTokenPersist;
 import io.grzr74.security.refresh.enums.RotationStatus;
-import io.grzr74.security.refresh.model.IssuedRefreshToken;
 import io.grzr74.security.refresh.model.RefreshToken;
-import io.grzr74.security.refresh.model.RotatedRefreshToken;
+import io.grzr74.security.refresh.model.RefreshTokenEmitido;
+import io.grzr74.security.refresh.model.RefreshTokenRotacionado;
 import io.grzr74.security.refresh.model.RotationResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,158 +24,166 @@ import java.util.HexFormat;
 import java.util.UUID;
 
 /**
- * Handles opaque refresh-token lifecycle: issuance, rotation, reuse detection, and revocation.
+ * Gerencia o ciclo de vida de tokens de atualização (refresh tokens)
+ * opacos: emissão, rotação, detecção de reutilização e revogação.
  */
 @Slf4j
 @RequiredArgsConstructor
 public class RefreshTokenService {
 
     /**
-     * Number of random bytes in the opaque secret.
+     * Número de bytes aleatórios no segredo opaco.
      */
     private static final int SECRET_BYTES = 32;
 
     /**
-     * Separator between the user identifier and the random secret.
+     * Separador entre o identificador do usuário e o segredo aleatório.
      */
     private static final String TOKEN_SEPARATOR = ".";
 
-    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    private final RefreshTokenStore store;
+    private final RefreshTokenPersist refreshTokenPersist;
     private final JwtProperties properties;
 
     /**
-     * Issues a new refresh secret and starts a new token family for the user.
+     * Emite um novo segredo de atualização e inicia uma nova família de tokens
+     * para o usuário.
      *
-     * @param userId user identifier
-     * @param email  email used to resolve fresh roles on rotation
-     * @return raw refresh secret and its lifetime
+     * @param usuarioId identificador do usuário
+     * @param email email usado para resolver novas funções na rotação
+     * @return segredo de atualização bruto e seu tempo de vida
      */
-    public IssuedRefreshToken issue(final String userId, final String email) {
-        String rawToken = generate(userId);
-        Instant now = Instant.now();
+    public RefreshTokenEmitido emitirRefresh(final String usuarioId, final String email) {
+        String tokenPuro = gerarRefreshToken(usuarioId); //rawToken
+        Instant agora = Instant.now();
         Duration ttl = properties.getRefreshTokenTtl();
 
-        RefreshToken token = RefreshToken.builder()
-                .tokenHash(hash(rawToken))
-                .familyId(UUID.randomUUID().toString())
-                .userId(userId)
+        RefreshToken refreshToken = RefreshToken.builder()
+                .tokenHash(hash(tokenPuro))
+                .familiaId(UUID.randomUUID().toString())
+                .usuarioId(usuarioId)
                 .email(email)
-                .consumed(false)
-                .familyExpiresAt(now.plus(ttl))
-                .createdAt(now)
+                .consumido(false)
+                .familiaExpiraEm(agora.plus(ttl))
+                .criadoEm(agora)
                 .build();
 
-        store.create(token, ttl);
-        return IssuedRefreshToken.builder()
-                .token(rawToken)
-                .expiresIn(ttl)
+        refreshTokenPersist.gerarRefreshToken(refreshToken, ttl);
+        return RefreshTokenEmitido.builder()
+                .token(tokenPuro)
+                .tempoRestanteExpiracao(ttl) //expiresIn
                 .build();
     }
 
     /**
-     * Consumes the presented secret and issues a replacement in the same family.
+     * Consome o segredo apresentado e emite um substituto pertencente à mesma família.
      *
-     * @param rawToken raw refresh secret
-     * @return new raw secret and the identity carried by the family
-     * @throws InvalidRefreshTokenException when the token is invalid or expired
-     * @throws RefreshTokenReuseException  when a consumed token is presented again
+     * @param rawToken o segredo de renovação (refresh secret) bruto
+     * @return o novo segredo bruto e a identidade associada a essa família
+     * @throws InvalidRefreshTokenException caso o token seja inválido ou esteja expirado
+     * @throws RefreshTokenReuseException caso um token já consumido seja apresentado novamente
      */
-    public RotatedRefreshToken rotate(final String rawToken) {
-        String userId = extractUserId(rawToken);
-        String nextRawToken = generate(userId);
+    public RefreshTokenRotacionado rotacionar(final String rawToken) {
+        String usuarioId = extrairUsuarioId(rawToken);
+        String nextRawToken = gerarRefreshToken(usuarioId);
 
-        RotationResult result = store.rotate(hash(rawToken), hash(nextRawToken));
+        RotationResult resultado = refreshTokenPersist
+                .rotacionar(hash(rawToken), hash(nextRawToken));
 
-        if (result.getStatus() == RotationStatus.REUSED) {
-            log.warn("Refresh token reuse detected — family revoked: {}", result.getFamilyId());
-            throw new RefreshTokenReuseException(result.getFamilyId());
+        if (resultado.getStatus() == RotationStatus.REUTILIZADO) {
+            log.warn("Refresh token reuse detected — family revoked: {}", resultado.getFamiliaId());
+            throw new RefreshTokenReuseException(resultado.getFamiliaId());
         }
-        if (result.getStatus() == RotationStatus.INVALID) {
+        if (resultado.getStatus() == RotationStatus.INVALIDO) {
             throw new InvalidRefreshTokenException();
         }
 
-        return RotatedRefreshToken.builder()
+        return RefreshTokenRotacionado.builder()
                 .token(nextRawToken)
-                .expiresIn(result.getExpiresIn())
-                .familyId(result.getFamilyId())
-                .userId(result.getUserId())
-                .email(result.getEmail())
+                .expiraEm(resultado.getExpiraEm())
+                .familiaId(resultado.getFamiliaId())
+                .usuarioId(resultado.getUsuarioId())
+                .email(resultado.getEmail())
                 .build();
     }
 
     /**
-     * Revokes the family that owns the presented secret; no-op when the secret is absent.
-     *
-     * @param rawToken raw refresh secret
+     * Revoga a família que possui o segredo apresentado; não faz nada quando
+     * o segredo está ausente.
+     * @param rawToken segredo de atualização bruto
      */
-    public void revokeFamily(final String rawToken) {
+    public void revogarFamilia(final String rawToken) {
         if (rawToken == null || rawToken.isBlank()) {
             return;
         }
-        store.revokeFamily(hash(rawToken));
+        refreshTokenPersist.revogarFamilia(hash(rawToken));
     }
 
     /**
-     * Revokes every family issued to the user (for example, after a password change).
-     *
-     * @param userId user identifier
+     * Revoga todas as famílias emitidas para o usuário (por exemplo, após uma
+     * alteração de senha).
+     * @param usuarioId identificador do usuário
      */
-    public void revokeAll(final String userId) {
-        store.revokeAllByUserId(userId);
+    public void revogaAll(final String usuarioId) {
+        refreshTokenPersist.revogaAllByUsuarioId(usuarioId);
     }
 
     /**
-     * Builds an opaque secret in the format {@code base64url(userId).base64url(random32)}.
+     * Constroi um segredo opaco no formato
+     * {@code base64url(usuarioId).base64url(random32)}.
      *
-     * @param userId user identifier
-     * @return raw refresh secret
+     * @param usuarioId identificador do usuário
+     * @return segredo de atualização (refresh secret) bruto
      */
-    private String generate(final String userId) {
-        byte[] secret = new byte[SECRET_BYTES];
-        RANDOM.nextBytes(secret);
+    private String gerarRefreshToken(final String usuarioId) {
+        // Gera 32 bytes aleatórios para o segredo
+        byte[] segredo = new byte[SECRET_BYTES];
+        // Preenche o array com bytes aleatórios
+        SECURE_RANDOM.nextBytes(segredo);
+        // Codifica o id do usuário e o segredo aleatório em Base64 URL-safe sem padding
         Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
-        return encoder.encodeToString(userId.getBytes(StandardCharsets.UTF_8))
+        // Concatena o id do usuário codificado, o separador e o segredo codificado
+        return encoder.encodeToString(usuarioId.getBytes(StandardCharsets.UTF_8))
                 + TOKEN_SEPARATOR
-                + encoder.encodeToString(secret);
+                + encoder.encodeToString(segredo);
     }
 
     /**
-     * Extracts and validates the user identifier embedded in the secret format.
+     * Extrai e valida o identificador de usuário incorporado no formato do segredo.
      *
-     * @param rawToken raw refresh secret
-     * @return user identifier
-     * @throws InvalidRefreshTokenException when the format is invalid
+     * @param rawToken o segredo de atualização (refresh secret) em seu formato original
+     * @return o identificador de usuário
+     * @throws InvalidRefreshTokenException caso o formato seja inválido
      */
-    private String extractUserId(final String rawToken) {
+    private String extrairUsuarioId(final String rawToken) {
         if (rawToken == null) {
             throw new InvalidRefreshTokenException();
         }
 
-        int separator = rawToken.indexOf(TOKEN_SEPARATOR);
-        if (separator <= 0 || separator == rawToken.length() - 1) {
+        int separador = rawToken.indexOf(TOKEN_SEPARATOR);
+        if (separador <= 0 || separador == rawToken.length() - 1) {
             throw new InvalidRefreshTokenException();
         }
 
         try {
-            String userId = new String(
-                    Base64.getUrlDecoder().decode(rawToken.substring(0, separator)),
+            String usuarioId = new String(
+                    Base64.getUrlDecoder().decode(rawToken.substring(0, separador)),
                     StandardCharsets.UTF_8);
-            if (userId.isBlank()) {
+            if (usuarioId.isBlank()) {
                 throw new InvalidRefreshTokenException();
             }
-            return userId;
+            return usuarioId;
         } catch (IllegalArgumentException ex) {
             throw new InvalidRefreshTokenException();
         }
     }
 
     /**
-     * Returns the hex-encoded SHA-256 hash of a raw secret.
+     * Retorna o hash SHA-256, codificado em hexadecimal, de um segredo bruto.
      *
-     * @param rawToken raw secret
-     * @return hex SHA-256 hash
+     * @param rawToken segredo bruto
+     * @return hash SHA-256 em hexadecimal
      */
     static String hash(final String rawToken) {
         try {
@@ -182,7 +191,7 @@ public class RefreshTokenService {
                     .digest(rawToken.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(hashBytes);
         } catch (NoSuchAlgorithmException ex) {
-            throw new IllegalStateException("SHA-256 algorithm not available", ex);
+            throw new IllegalStateException("SHA-256 algoritmo não disponível", ex);
         }
     }
 }

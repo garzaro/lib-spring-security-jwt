@@ -3,11 +3,11 @@ package io.grzr74.security.refresh;
 import io.grzr74.security.config.JwtProperties;
 import io.grzr74.security.exception.InvalidRefreshTokenException;
 import io.grzr74.security.exception.RefreshTokenReuseException;
-import io.grzr74.security.refresh.armazen.RefreshTokenStore;
+import io.grzr74.security.refresh.armazen.RefreshTokenPersist;
 import io.grzr74.security.refresh.enums.RotationStatus;
-import io.grzr74.security.refresh.model.IssuedRefreshToken;
 import io.grzr74.security.refresh.model.RefreshToken;
-import io.grzr74.security.refresh.model.RotatedRefreshToken;
+import io.grzr74.security.refresh.model.RefreshTokenEmitido;
+import io.grzr74.security.refresh.model.RefreshTokenRotacionado;
 import io.grzr74.security.refresh.model.RotationResult;
 import io.grzr74.security.refresh.service.RefreshTokenService;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +34,7 @@ class RefreshTokenServiceTest {
     private static final Duration SESSION_TTL = Duration.ofDays(7);
 
     @Mock
-    private RefreshTokenStore store;
+    private RefreshTokenPersist store;
 
     private RefreshTokenService service;
 
@@ -47,14 +47,14 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void should_issue_opaque_token_and_persist_only_its_hash() {
-        IssuedRefreshToken issued = service.issue("user1", "user@test.com");
+    void should_emitirRefresh_opaque_token_and_persist_only_its_hash() {
+        RefreshTokenEmitido issued = service.emitirRefresh("user1", "user@test.com");
 
         assertThat(issued.getToken()).contains(".");
         assertThat(issued.getExpiresIn()).isEqualTo(SESSION_TTL);
 
         ArgumentCaptor<RefreshToken> captor = ArgumentCaptor.forClass(RefreshToken.class);
-        verify(store).create(captor.capture(), any(Duration.class));
+        verify(store).gerarRefreshToken(captor.capture(), any(Duration.class));
 
         RefreshToken stored = captor.getValue();
         assertThat(stored.getTokenHash()).isEqualTo(RefreshTokenService.hash(issued.getToken()));
@@ -66,25 +66,25 @@ class RefreshTokenServiceTest {
     }
 
     @Test
-    void should_issue_distinct_tokens_for_each_login() {
-        String first = service.issue("user1", "user@test.com").getToken();
-        String second = service.issue("user1", "user@test.com").getToken();
+    void should_emitirRefresh_distinct_tokens_for_each_login() {
+        String first = service.emitirRefresh("user1", "user@test.com").getToken();
+        String second = service.emitirRefresh("user1", "user@test.com").getToken();
 
         assertThat(first).isNotEqualTo(second);
     }
 
     @Test
     void should_rotate_valid_token_and_keep_family() {
-        String rawToken = service.issue("user1", "user@test.com").getToken();
-        when(store.rotate(anyString(), anyString())).thenReturn(RotationResult.builder()
-                .status(RotationStatus.ROTATED)
+        String rawToken = service.emitirRefresh("user1", "user@test.com").getToken();
+        when(store.rotacionar(anyString(), anyString())).thenReturn(RotationResult.builder()
+                .status(RotationStatus.ROTACIONADO)
                 .familyId("family-1")
                 .userId("user1")
                 .email("user@test.com")
                 .expiresIn(Duration.ofDays(3))
                 .build());
 
-        RotatedRefreshToken rotated = service.rotate(rawToken);
+        RefreshTokenRotacionado rotated = service.rotate(rawToken);
 
         assertThat(rotated.getToken()).contains(".");
         assertThat(rotated.getToken()).isNotEqualTo(rawToken);
@@ -94,16 +94,16 @@ class RefreshTokenServiceTest {
 
         ArgumentCaptor<String> currentHash = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> nextHash = ArgumentCaptor.forClass(String.class);
-        verify(store).rotate(currentHash.capture(), nextHash.capture());
+        verify(store).rotacionar(currentHash.capture(), nextHash.capture());
         assertThat(currentHash.getValue()).isEqualTo(RefreshTokenService.hash(rawToken));
         assertThat(nextHash.getValue()).isEqualTo(RefreshTokenService.hash(rotated.getToken()));
     }
 
     @Test
     void should_throw_on_reused_token() {
-        String rawToken = service.issue("user1", "user@test.com").getToken();
-        when(store.rotate(anyString(), anyString())).thenReturn(RotationResult.builder()
-                .status(RotationStatus.REUSED)
+        String rawToken = service.emitirRefresh("user1", "user@test.com").getToken();
+        when(store.rotacionar(anyString(), anyString())).thenReturn(RotationResult.builder()
+                .status(RotationStatus.REUTILIZADO)
                 .familyId("family-1")
                 .build());
 
@@ -114,9 +114,9 @@ class RefreshTokenServiceTest {
 
     @Test
     void should_throw_on_invalid_token() {
-        String rawToken = service.issue("user1", "user@test.com").getToken();
-        when(store.rotate(anyString(), anyString()))
-                .thenReturn(RotationResult.builder().status(RotationStatus.INVALID).build());
+        String rawToken = service.emitirRefresh("user1", "user@test.com").getToken();
+        when(store.rotacionar(anyString(), anyString()))
+                .thenReturn(RotationResult.builder().status(RotationStatus.INVALIDO).build());
 
         assertThatThrownBy(() -> service.rotate(rawToken))
                 .isInstanceOf(InvalidRefreshTokenException.class);
@@ -132,25 +132,25 @@ class RefreshTokenServiceTest {
 
     @Test
     void should_revoke_family_by_token_hash() {
-        String rawToken = service.issue("user1", "user@test.com").getToken();
+        String rawToken = service.emitirRefresh("user1", "user@test.com").getToken();
 
-        service.revokeFamily(rawToken);
+        service.revogarFamilia(rawToken);
 
-        verify(store).revokeFamily(RefreshTokenService.hash(rawToken));
+        verify(store).revogarFamilia(RefreshTokenService.hash(rawToken));
     }
 
     @Test
     void should_ignore_blank_token_on_revoke_family() {
-        service.revokeFamily(" ");
+        service.revogarFamilia(" ");
 
-        verify(store, never()).revokeFamily(anyString());
+        verify(store, never()).revogarFamilia(anyString());
     }
 
     @Test
     void should_revoke_all_sessions_for_user() {
-        service.revokeAll("user1");
+        service.revogaAll("user1");
 
-        verify(store).revokeAllByUserId("user1");
+        verify(store).revogaAllByUsuarioId("user1");
     }
 
     @Test

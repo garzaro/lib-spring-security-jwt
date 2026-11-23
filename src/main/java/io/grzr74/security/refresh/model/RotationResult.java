@@ -7,26 +7,27 @@ import lombok.Getter;
 import java.time.Duration;
 
 /**
- * Result of an atomic refresh-token rotation, including data needed to issue the next access token.
+ * Resultado de uma rotação atômica de *refresh token*, incluindo
+ * os dados necessários para emitir o próximo *access token*.
  */
 @Getter
 @Builder
 public class RotationResult {
 
     /**
-     * Rotation outcome.
+     * Resultado da rotação.
      */
     private final RotationStatus status;
 
     /**
-     * Session identifier, present when the token was rotated.
+     * Identificador de sessão, presente no momento em que o token foi rotacionado.
      */
-    private final String familyId;
+    private final String familiaId;
 
     /**
      * User identifier, present when the token was rotated.
      */
-    private final String userId;
+    private final String usuarioId;
 
     /**
      * Email used to resolve fresh roles, present when the token was rotated.
@@ -36,6 +37,6 @@ public class RotationResult {
     /**
      * Remaining refresh lifetime until the family ceiling, present when the token was rotated.
      */
-    private final Duration expiresIn;
+    private final Duration expiraEm;
 
 }

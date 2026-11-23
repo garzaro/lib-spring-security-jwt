@@ -3,7 +3,7 @@ package io.grzr74.security.api.identidade;
 import java.util.Optional;
 
 /**
- * Loads security users from the consuming application's data source.
+ * Carrega os usuários de segurança da fonte de dados do aplicativo consumidor.
  *
  * Dois pontos para documentar no contrato:
  *
@@ -18,19 +18,17 @@ import java.util.Optional;
 public interface SecurityUserService {
 
     /**
-     * Finds a user by email for email/password authentication.
-     *
-     * @param email user email
-     * @return matching user, or empty if not found
+     * Encontra um usuário por e-mail para autenticação por e-mail/senha.
+     * @param email e-mail do usuário
+     * @return usuário correspondente ou vazio se não for encontrado
      */
     Optional<SecurityUser> findByEmail(String email);
 
     /**
-     * Finds a user by phone for passwordless SMS authentication.
-     *
-     * @param phone phone number in E.164 format (e.g. +33612345678)
-     * @return matching user, or empty if not found
+     * Encontra um usuário por telefone para autenticação SMS sem senha.
+     * @param phone número de telefone no formato E.164 (ex.: +5500912345678)
+     * * @return usuário correspondente ou vazio se não for encontrado
      */
-    Optional<SecurityUser> findByPhone(String phone);
+    Optional<SecurityUser> findByTelefone(String phone);
 
 }

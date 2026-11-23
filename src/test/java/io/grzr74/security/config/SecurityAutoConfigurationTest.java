@@ -4,7 +4,7 @@ import io.grzr74.security.auth.service.AuthService;
 import io.grzr74.security.cookie.TokenCookieFactory;
 import io.grzr74.security.filter.JwtAuthenticationFilter;
 import io.grzr74.security.refresh.service.RefreshTokenService;
-import io.grzr74.security.refresh.armazen.RefreshTokenStore;
+import io.grzr74.security.refresh.armazen.RefreshTokenPersist;
 import io.grzr74.security.token.JwtTokenProvider;
 import io.grzr74.security.api.identidade.SecurityUserService;
 import org.junit.jupiter.api.Test;
@@ -37,7 +37,7 @@ class SecurityAutoConfigurationTest {
             assertThat(context).hasSingleBean(JwtTokenProvider.class);
             assertThat(context).hasSingleBean(JwtAuthenticationFilter.class);
             assertThat(context).hasSingleBean(TokenCookieFactory.class);
-            assertThat(context).hasSingleBean(RefreshTokenStore.class);
+            assertThat(context).hasSingleBean(RefreshTokenPersist.class);
             assertThat(context).hasSingleBean(RefreshTokenService.class);
             assertThat(context).hasSingleBean(AuthService.class);
             assertThat(context).hasSingleBean(PasswordEncoder.class);
@@ -46,11 +46,11 @@ class SecurityAutoConfigurationTest {
 
     @Test
     void should_allow_consumer_to_replace_refresh_store() {
-        RefreshTokenStore customStore = mock(RefreshTokenStore.class);
+        RefreshTokenPersist customStore = mock(RefreshTokenPersist.class);
 
-        runner().withBean(RefreshTokenStore.class, () -> customStore).run(context -> {
+        runner().withBean(RefreshTokenPersist.class, () -> customStore).run(context -> {
             assertThat(context).hasNotFailed();
-            assertThat(context.getBean(RefreshTokenStore.class)).isSameAs(customStore);
+            assertThat(context.getBean(RefreshTokenPersist.class)).isSameAs(customStore);
         });
     }
 
