@@ -6,45 +6,47 @@ import lombok.Getter;
 import java.time.Instant;
 
 /**
- * Immutable refresh-token record stored server-side; the raw secret is never persisted.
+ * Registro de refresh token imutável armazenado no lado do servidor;
+ * o segredo original nunca é persistido.
  */
 @Getter
 @Builder
 public class RefreshToken {
 
     /**
-     * SHA-256 hash of the raw refresh secret.
+     * Hash SHA-256 do segredo de atualização (refresh secret) bruto.
      */
     private final String tokenHash;
 
     /**
-     * Session identifier shared by every token rotated from one login.
+     * Identificador de sessão compartilhado por todos os tokens
+     * gerados a partir de um mesmo login.
      */
-    private final String familyId;
+    private final String familiaId;
 
     /**
-     * Identifier of the user this token belongs to.
+     * Identificador do usuário a quem este token pertence.
      */
-    private final String userId;
+    private final String usuarioId;
 
     /**
-     * Email used to resolve fresh roles on rotation.
+     * E-mail utilizado para definir novas funções em regime de rodízio.
      */
     private final String email;
 
     /**
-     * {@code true} when this token has already been exchanged.
+     *{@code true} quando este token já tiver sido trocado.
      */
-    private final boolean consumed;
+    private final boolean consumido;
 
     /**
-     * Fixed session ceiling carried by the family.
+     * Limite fixo de sessões, a cargo da família.
      */
-    private final Instant familyExpiresAt;
+    private final Instant familiaExpiraEm;
 
     /**
-     * Creation timestamp for this token record.
+     * Carimbo de data/hora de criação deste registro de token.
      */
-    private final Instant createdAt;
+    private final Instant criadoEm;
 
 }

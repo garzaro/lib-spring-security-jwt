@@ -232,7 +232,7 @@ public class AuthController {
         return withCookies(authService.login(request.email(), request.password()));
     }
 
-    @PostMapping("/otp/send")
+    @PostMapping("/otp/envioMensagem")
     public void sendOtp(@Valid @RequestBody OtpRequest request) {
         authService.initiateOtpLogin(request.getPhone());
     }
@@ -309,7 +309,7 @@ public interface SecurityUserService {
 ```
 
 - `findByEmail` is required for login and refresh (fresh roles on rotation).
-- `findByPhone` is required only for the OTP flow.
+- `findByTelefone` is required only for the OTP flow.
 - Put app permissions in `SecurityUser.permissions`.
 
 ### OTP contracts (optional)

@@ -19,7 +19,7 @@ import java.util.List;
  * Redis-backed refresh-token store using StringRedisTemplate and Lua scripts.
  * Rotation, reuse detection, and family revocation run atomically inside Redis.
  */
-public class RedisRefreshTokenStore implements RefreshTokenStore {
+public class RedisRefreshTokenStore implements RefreshTokenPersist {
 
     /**
      * Separator used by Lua scripts to return structured values.
@@ -27,10 +27,10 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
     private static final String FIELD_SEPARATOR = "\t";
 
     private static final DefaultRedisScript<Long> CREATE_SCRIPT =
-            script("refresh-create.lua", Long.class);
+            script("refresh-gerarRefreshToken.lua", Long.class);
 
     private static final DefaultRedisScript<String> ROTATE_SCRIPT =
-            script("refresh-rotate.lua", String.class);
+            script("refresh-rotacionar.lua", String.class);
 
     private static final DefaultRedisScript<Long> REVOKE_FAMILY_SCRIPT =
             script("refresh-revoke-family.lua", Long.class);
@@ -53,22 +53,25 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
     }
 
     @Override
-    public void create(final RefreshToken token, final Duration ttl) {
+    public void gerarRefreshToken(final RefreshToken token, final Duration ttl) {
         long ttlSeconds = Math.max(1, ttl.toSeconds());
 
         redisTemplate.execute(CREATE_SCRIPT,
-                List.of(refreshKey(token.getTokenHash()), familyKey(token.getFamilyId()), userKey(token.getUserId())),
-                token.getFamilyId(),
-                token.getUserId(),
+                List.of(refreshKey(
+                        token.getTokenHash()),
+                        familyKey(token.getFamiliaId()),
+                        userKey(token.getUsuarioId())),
+                token.getFamiliaId(),
+                token.getUsuarioId(),
                 token.getEmail(),
-                String.valueOf(token.getFamilyExpiresAt().toEpochMilli()),
+                String.valueOf(token.getFamiliaExpiraEm().toEpochMilli()),
                 String.valueOf(ttlSeconds));
     }
 
     @Override
-    public RotationResult rotate(final String currentTokenHash, final String nextTokenHash) {
+    public RotationResult rotacionar(final String tokenHashAtual, final String proximoTokenHash) {
         String raw = redisTemplate.execute(ROTATE_SCRIPT,
-                List.of(refreshKey(currentTokenHash), refreshKey(nextTokenHash)),
+                List.of(refreshKey(tokenHashAtual), refreshKey(proximoTokenHash)),
                 properties.getRedis().getKeyPrefix(),
                 String.valueOf(Instant.now().toEpochMilli()));
 
@@ -76,16 +79,16 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
     }
 
     @Override
-    public void revokeFamily(final String tokenHash) {
+    public void revogarFamilia(final String tokenHash) {
         redisTemplate.execute(REVOKE_FAMILY_SCRIPT,
                 List.of(refreshKey(tokenHash)),
                 properties.getRedis().getKeyPrefix());
     }
 
     @Override
-    public void revokeAllByUserId(final String userId) {
+    public void revogaAllByUsuarioId(final String usuarioId) {
         redisTemplate.execute(REVOKE_ALL_SCRIPT,
-                List.of(userKey(userId)),
+                List.of(userKey(usuarioId)),
                 properties.getRedis().getKeyPrefix());
     }
 
@@ -97,23 +100,23 @@ public class RedisRefreshTokenStore implements RefreshTokenStore {
      */
     private RotationResult parseRotation(final String raw) {
         if (raw == null) {
-            return RotationResult.builder().status(RotationStatus.INVALID).build();
+            return RotationResult.builder().status(RotationStatus.INVALIDO).build();
         }
 
         String[] fields = raw.split(FIELD_SEPARATOR, -1);
         return switch (fields[0]) {
-            case "ROTATED" -> RotationResult.builder()
-                    .status(RotationStatus.ROTATED)
-                    .familyId(fields[1])
-                    .userId(fields[2])
+            case "ROTACIONADO" -> RotationResult.builder()
+                    .status(RotationStatus.ROTACIONADO)
+                    .familiaId(fields[1])
+                    .usuarioId(fields[2])
                     .email(fields[3])
-                    .expiresIn(Duration.ofSeconds(Long.parseLong(fields[4])))
+                    .expiraEm(Duration.ofSeconds(Long.parseLong(fields[4])))
                     .build();
-            case "REUSED" -> RotationResult.builder()
-                    .status(RotationStatus.REUSED)
-                    .familyId(fields.length > 1 ? fields[1] : null)
+            case "REUTILIZADO" -> RotationResult.builder()
+                    .status(RotationStatus.REUTILIZADO)
+                    .familiaId(fields.length > 1 ? fields[1] : null)
                     .build();
-            default -> RotationResult.builder().status(RotationStatus.INVALID).build();
+            default -> RotationResult.builder().status(RotationStatus.INVALIDO).build();
         };
     }
 

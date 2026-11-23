@@ -29,6 +29,7 @@
 		<java.version>21</java.version>
 		<jjwt.version>0.12.6</jjwt.version>
 		<testcontainers.version>1.21.4</testcontainers.version>
+		<bouncycastle.version>1.86</bouncycastle.version>
 	</properties>
 
 	<dependencies>
@@ -52,6 +53,13 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 			<optional>true</optional>
+		</dependency>
+
+		<!-- Bouncy Castle provides the Argon2 implementation used by Argon2PasswordEncoder. -->
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk18on</artifactId>
+			<version>${bouncycastle.version}</version>
 		</dependency>
 
 		<dependency>

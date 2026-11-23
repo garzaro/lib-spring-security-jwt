@@ -4,9 +4,9 @@ import io.grzr74.security.config.JwtProperties;
 import io.grzr74.security.exception.InvalidRefreshTokenException;
 import io.grzr74.security.exception.RefreshTokenReuseException;
 import io.grzr74.security.refresh.armazen.RedisRefreshTokenStore;
-import io.grzr74.security.refresh.armazen.RefreshTokenStore;
-import io.grzr74.security.refresh.model.IssuedRefreshToken;
-import io.grzr74.security.refresh.model.RotatedRefreshToken;
+import io.grzr74.security.refresh.armazen.RefreshTokenPersist;
+import io.grzr74.security.refresh.model.RefreshTokenEmitido;
+import io.grzr74.security.refresh.model.RefreshTokenRotacionado;
 import io.grzr74.security.refresh.service.RefreshTokenService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -44,7 +44,7 @@ class RedisRefreshTokenStoreTest {
     private static LettuceConnectionFactory connectionFactory;
     private static StringRedisTemplate redisTemplate;
 
-    private RefreshTokenStore store;
+    private RefreshTokenPersist store;
     private RefreshTokenService service;
     private JwtProperties properties;
 
@@ -76,9 +76,9 @@ class RedisRefreshTokenStoreTest {
 
     @Test
     void should_issue_and_rotate_within_same_family() {
-        IssuedRefreshToken issued = service.issue("user1", "user@test.com");
+        RefreshTokenEmitido issued = service.emitirRefresh("user1", "user@test.com");
 
-        RotatedRefreshToken rotated = service.rotate(issued.getToken());
+        RefreshTokenRotacionado rotated = service.rotate(issued.getToken());
 
         assertThat(rotated.getToken()).isNotEqualTo(issued.getToken());
         assertThat(rotated.getFamilyId()).isNotBlank();
@@ -89,8 +89,8 @@ class RedisRefreshTokenStoreTest {
 
     @Test
     void should_detect_reuse_and_revoke_family() {
-        IssuedRefreshToken issued = service.issue("user1", "user@test.com");
-        RotatedRefreshToken rotated = service.rotate(issued.getToken());
+        RefreshTokenEmitido issued = service.emitirRefresh("user1", "user@test.com");
+        RefreshTokenRotacionado rotated = service.rotate(issued.getToken());
 
         assertThatThrownBy(() -> service.rotate(issued.getToken()))
                 .isInstanceOf(RefreshTokenReuseException.class);
@@ -101,7 +101,7 @@ class RedisRefreshTokenStoreTest {
 
     @Test
     void should_reject_unknown_token() {
-        String unknown = service.issue("user1", "user@test.com").getToken() + "tampered";
+        String unknown = service.emitirRefresh("user1", "user@test.com").getToken() + "tampered";
 
         assertThatThrownBy(() -> service.rotate(unknown))
                 .isInstanceOf(InvalidRefreshTokenException.class);
@@ -109,9 +109,9 @@ class RedisRefreshTokenStoreTest {
 
     @Test
     void should_revoke_family_on_logout() {
-        IssuedRefreshToken issued = service.issue("user1", "user@test.com");
+        RefreshTokenEmitido issued = service.emitirRefresh("user1", "user@test.com");
 
-        service.revokeFamily(issued.getToken());
+        service.revogarFamilia(issued.getToken());
 
         assertThatThrownBy(() -> service.rotate(issued.getToken()))
                 .isInstanceOf(InvalidRefreshTokenException.class);
@@ -119,11 +119,11 @@ class RedisRefreshTokenStoreTest {
 
     @Test
     void should_revoke_all_families_for_user() {
-        IssuedRefreshToken first = service.issue("user1", "user@test.com");
-        IssuedRefreshToken second = service.issue("user1", "user@test.com");
-        IssuedRefreshToken otherUser = service.issue("user2", "other@test.com");
+        RefreshTokenEmitido first = service.emitirRefresh("user1", "user@test.com");
+        RefreshTokenEmitido second = service.emitirRefresh("user1", "user@test.com");
+        RefreshTokenEmitido otherUser = service.emitirRefresh("user2", "other@test.com");
 
-        service.revokeAll("user1");
+        service.revogaAll("user1");
 
         assertThatThrownBy(() -> service.rotate(first.getToken()))
                 .isInstanceOf(InvalidRefreshTokenException.class);
@@ -138,10 +138,10 @@ class RedisRefreshTokenStoreTest {
         store = new RedisRefreshTokenStore(redisTemplate, properties);
         service = new RefreshTokenService(store, properties);
 
-        IssuedRefreshToken issued = service.issue("user1", "user@test.com");
+        RefreshTokenEmitido issued = service.emitirRefresh("user1", "user@test.com");
         Thread.sleep(1_100L);
 
-        RotatedRefreshToken rotated = service.rotate(issued.getToken());
+        RefreshTokenRotacionado rotated = service.rotate(issued.getToken());
         assertThat(rotated.getExpiresIn()).isLessThanOrEqualTo(Duration.ofSeconds(1));
 
         Thread.sleep(2_100L);
@@ -152,7 +152,7 @@ class RedisRefreshTokenStoreTest {
 
     @Test
     void should_allow_only_one_of_two_concurrent_rotations() throws Exception {
-        IssuedRefreshToken issued = service.issue("user1", "user@test.com");
+        RefreshTokenEmitido issued = service.emitirRefresh("user1", "user@test.com");
         String rawToken = issued.getToken();
 
         ExecutorService pool = Executors.newFixedThreadPool(2);
@@ -179,9 +179,9 @@ class RedisRefreshTokenStoreTest {
                     first.get(10, TimeUnit.SECONDS),
                     second.get(10, TimeUnit.SECONDS));
 
-            List<RotatedRefreshToken> rotated = outcomes.stream()
-                    .filter(RotatedRefreshToken.class::isInstance)
-                    .map(RotatedRefreshToken.class::cast)
+            List<RefreshTokenRotacionado> rotated = outcomes.stream()
+                    .filter(RefreshTokenRotacionado.class::isInstance)
+                    .map(RefreshTokenRotacionado.class::cast)
                     .toList();
             List<RefreshTokenReuseException> reused = outcomes.stream()
                     .filter(RefreshTokenReuseException.class::isInstance)

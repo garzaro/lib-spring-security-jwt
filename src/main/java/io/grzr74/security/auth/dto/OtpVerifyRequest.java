@@ -20,12 +20,12 @@ public class OtpVerifyRequest {
     @Pattern(
             regexp = "^\\+[1-9]\\d{6,14}$",
             message = "deve ser um número de telefone válido no formato E.164")
-    private String phone;
+    private String telefone;
 
     /**
      * Senha de uso único recebida por SMS.
      */
     @NotBlank
-    @Size(min = 4, max = 8)
-    private String code;
+    @Size(min = 4, max = 8, message = "codigo deve ter entre 4 e 8 caracteres")
+    private String codigo;
 }

@@ -21,5 +21,16 @@ public class OtpRequest {
     @Pattern(
             regexp = "^\\+[1-9]\\d{6,14}$",
             message = "deve ser um número de telefone válido no formato E.164 (por exemplo, +33612345678)")
-    private String phone;
+    private String telefone;
 }
+
+//Como estamos trabalhando com bean validation analise e monte
+//um plano para internacionalização.  O plano deve conter o padrao
+//        ...`message = "{message}"`} em cada anotation.
+//
+//        Decisoes:
+//        1 - chave única por anotação.
+//        2 - pt-BR, como o código atual.
+//        3 - apenas pt_BR.
+//        4 - Inclua as mensagens de JwtSecurityException.
+
